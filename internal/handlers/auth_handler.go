@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,7 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 	phone := ctx.PostForm("phone")
 	username := ctx.PostForm("username")
 
-	newUser, err := h.service.Register(&models.CreateUserRequest{
+	newUser, err := h.service.Register(ctx.Request.Context(), &models.CreateUserRequest{
 		Email:    email,
 		Password: password,
 		Phone:    phone,
@@ -51,10 +52,13 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	email := ctx.PostForm("email")
 	password := ctx.PostForm("password")
 
-	user, err := h.service.Login(&models.LoginRequest{
-		Email:    email,
-		Password: password,
-	})
+	user, err := h.service.Login(
+		ctx.Request.Context(),
+		&models.LoginRequest{
+			Email:    email,
+			Password: password,
+		},
+	)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, lib.Response{
 			Success: false,
@@ -67,5 +71,18 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		Success: true,
 		Message: "Login Success",
 		Result:  user,
+	})
+}
+
+func (h *AuthHandler) GetUsers(ctx *gin.Context) {
+	users, err := h.service.GetAllUsers(ctx.Request.Context())
+
+	if err != nil {
+		fmt.Println("Failed to Get Users")
+	}
+
+	ctx.JSON(http.StatusOK, lib.Response{
+		Success: true,
+		Result:  users,
 	})
 }
