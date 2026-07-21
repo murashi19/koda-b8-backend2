@@ -1,0 +1,44 @@
+### Register
+POST http://localhost:8080/auth/register
+Content-Type: application/x-www-form-urlencoded
+
+email=admin@mail.com&password=admin123&username=admin&phone=082131213511
+
+
+### Login
+POST http://localhost:8080/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+email=admin@mail.com&password=admin123
+
+### GET USER
+GET /users HTTP/1.1
+Host: localhost:8080
+
+### GET BY ID
+GET /users/1 HTTP/1.1
+Host: localhost:8080
+Content-Type: application/x-www-form-urlencoded
+
+
+### CREATE USER
+POST  /users HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+    "email" : "shidiq@mail.com",
+    "password": "shidiq123",
+    "username": "shidiq",
+    "phone": "081322768862"
+}
+
+### UPDATE USER
+PATCH /user/1 HTTP/1.1
+Host: localhost:8080
+Content-Type: application/x-www-form-urlencoded
+
+### DELETE USER
+DELETE /user/4 HTTP/1.1
+Host: localhost:8080
+Authorization: "hello"

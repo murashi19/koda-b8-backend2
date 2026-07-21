@@ -20,17 +20,16 @@ func NewAuthHandler(service *service.UserService) *AuthHandler {
 }
 
 func (h *AuthHandler) Register(ctx *gin.Context) {
-	email := ctx.PostForm("email")
-	password := ctx.PostForm("password")
-	phone := ctx.PostForm("phone")
-	username := ctx.PostForm("username")
+	var req models.CreateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, lib.Response{
+			Success: false,
+			Message: "Invalid binding JSON",
+		})
+		return
+	}
 
-	newUser, err := h.service.Register(ctx.Request.Context(), &models.CreateUserRequest{
-		Email:    email,
-		Password: password,
-		Phone:    phone,
-		Username: username,
-	})
+	newUser, err := h.service.Register(ctx.Request.Context(), &req)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, lib.Response{
@@ -48,15 +47,18 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 }
 
 func (h *AuthHandler) Login(ctx *gin.Context) {
-	email := ctx.PostForm("email")
-	password := ctx.PostForm("password")
+	var req models.LoginRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, lib.Response{
+			Success: false,
+			Message: "Invalid binding JSON",
+		})
+		return
+	}
 
 	user, err := h.service.Login(
 		ctx.Request.Context(),
-		&models.LoginRequest{
-			Email:    email,
-			Password: password,
-		},
+		&req,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, lib.Response{
@@ -69,6 +71,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, lib.Response{
 		Success: true,
 		Message: "Login Success",
+		Token : "hello",
 		Result:  user,
 	})
 }
