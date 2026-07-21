@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -71,18 +70,5 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		Success: true,
 		Message: "Login Success",
 		Result:  user,
-	})
-}
-
-func (h *AuthHandler) GetUsers(ctx *gin.Context) {
-	users, err := h.service.GetAllUsers(ctx.Request.Context())
-
-	if err != nil {
-		fmt.Println("Failed to Get Users")
-	}
-
-	ctx.JSON(http.StatusOK, lib.Response{
-		Success: true,
-		Result:  users,
 	})
 }

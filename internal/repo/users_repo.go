@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/murashi19/koda-b8-backend1/internal/models"
@@ -39,6 +40,38 @@ func (r *UserRepo) Create(ctx context.Context, data *models.User) (*models.User,
 	return user, nil
 }
 
+func (r *UserRepo) GetById(ctx context.Context, id int64) (*models.User, error) {
+	query := `SELECT * FROM users WHERE id = $1;`
+
+	return oneRow[models.User](ctx, r.db, query, id)
+}
+
+func (r *UserRepo) UpdateUser(ctx context.Context, id int64, data *models.UpdateUserRequest) (*models.User, error) {
+	query := `UPDATE users SET 
+	email = COALESCE($1, email),
+	username = COALESCE($2, username),
+	phone = COALESCE($3, phone),
+	updated_at = NOW()
+	WHERE id = $4
+	RETURNING *
+	`
+	return oneRow[models.User](ctx, r.db, query, data.Email, data.Username, data.Phone, id)
+}
+
+func (r *UserRepo) DeleteUser(ctx context.Context, id int64) error {
+	query := `DELETE FROM users WHERE id = $1`
+
+	rows, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if rows.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
 func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
 	SELECT
@@ -57,12 +90,7 @@ func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*models.User,
 }
 
 func (r *UserRepo) GetAllUsers(ctx context.Context) ([]*models.User, error) {
-	sql := `SELECT
-			id,
-			email,
-			username,
-			phone
-			FROM users
+	sql := `SELECT * FROM users
 			ORDER BY id`
 	return rows[models.User](ctx, r.db, sql)
 }
