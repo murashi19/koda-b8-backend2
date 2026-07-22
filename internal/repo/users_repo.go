@@ -25,18 +25,27 @@ func NewUserRepo(db *pgxpool.Pool) *UserRepo {
 func (r *UserRepo) Create(ctx context.Context, data *models.User) (*models.User, error) {
 
 	sql := `
-		INSERT INTO users(email, password, username, phone) VALUES
-		($1, $2, $3, $4)
-		RETURNING id, email, password, username,phone,created_at,updated_at;
+		INSERT INTO users (
+			email,
+			password,
+			username,
+			phone,
+			picture
+		)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING *
 	`
-	user, err := oneRow[models.User](ctx, r.db, sql, data.Email, data.Password, data.Username, data.Phone)
+
+	user, err := oneRow[models.User](ctx, r.db, sql, data.Email, data.Password, data.Username, data.Phone, data.Picture)
+
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("Email already registered")
+			return nil, fmt.Errorf("email already registered")
 		}
 		return nil, err
 	}
+
 	return user, nil
 }
 
@@ -81,7 +90,8 @@ func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*models.User,
 		username,
 		phone,
 		created_at,
-		updated_at
+		updated_at,
+		picture
 	FROM users
 	WHERE email = $1
 	`
@@ -93,4 +103,14 @@ func (r *UserRepo) GetAllUsers(ctx context.Context) ([]*models.User, error) {
 	sql := `SELECT * FROM users
 			ORDER BY id`
 	return rows[models.User](ctx, r.db, sql)
+}
+
+func (r *UserRepo) Upload(ctx context.Context, id int64, picture string) (*models.User, error) {
+	sql := `UPDATE users SET 
+	picture = $1,
+	updated_at = NOW()
+	WHERE id = $2
+	RETURNING *
+	`
+	return oneRow[models.User](ctx, r.db, sql, picture, id)
 }
