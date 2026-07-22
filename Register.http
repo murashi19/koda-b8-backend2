@@ -6,14 +6,19 @@ email=admin@mail.com&password=admin123&username=admin&phone=082131213511
 
 
 ### Login
-POST http://localhost:8080/auth/login
-Content-Type: application/x-www-form-urlencoded
+POST  /auth/login HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
 
-email=admin@mail.com&password=admin123
+{
+    "email" : "admin@mail.com",
+    "password": "admin123"
+}
 
 ### GET USER
 GET /users HTTP/1.1
 Host: localhost:8080
+Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjEsImlhdCI6MTc4NDczMTczM30.t_sdnbYh9N97y6RVwFUULoAU6DWTwsHzzSlOqVudb9A
 
 ### GET BY ID
 GET /users/1 HTTP/1.1
@@ -42,3 +47,12 @@ Content-Type: application/x-www-form-urlencoded
 DELETE /user/4 HTTP/1.1
 Host: localhost:8080
 Authorization: "hello"
+
+###
+POST /auth/refresh HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+    "refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3ODQ5OTk3ODcsImlhdCI6MTc4NDc0MDU4N30.sCKBmpwnjz705ore24EGoh6Jo1VKxpteGlHRkNH2q-8"
+}

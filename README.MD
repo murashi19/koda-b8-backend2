@@ -1,15 +1,31 @@
 # Authentication API
 
-RESTful Authentication API built with **Go (Golang)**, **Gin**, and **PostgreSQL**.  
-This project implements a simple authentication system using a layered architecture (Handler → Service → Repository) with manual Dependency Injection.
+![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go)
+![Gin](https://img.shields.io/badge/Gin-Web_Framework-00AB66)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?logo=postgresql)
+![JWT](https://img.shields.io/badge/JWT-Authentication-black)
+![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?logo=swagger)
 
-## Features
+RESTful Authentication API built with **Go (Golang)**, **Gin**, and **PostgreSQL**.
+
+This project implements user authentication and management using **JWT Authentication**, **Refresh Token**, **Layered Architecture**, and **Manual Dependency Injection**.
+
+---
+
+# Features
 
 - User Registration
 - User Login
-- Password hashing using bcrypt
-- PostgreSQL database integration
-- Database migration
+- JWT Authentication
+- Refresh Token Authentication
+- Authorization Middleware
+- User CRUD
+- Upload Profile Picture
+- Password Hashing (bcrypt)
+- PostgreSQL Integration
+- Database Migration
+- Swagger Documentation
+- Makefile Automation
 - Layered Architecture
 - Manual Dependency Injection
 
@@ -18,18 +34,22 @@ This project implements a simple authentication system using a layered architect
 # Architecture
 
 ```
-cmd/main.go                 → Application entry point
+cmd/main.go                 → Application Entry Point
 
 internal/
 ├── di/                     → Dependency Injection
+├── dto/                    → Request & Response DTO
 ├── handlers/               → HTTP Handlers
-├── lib/                    → Response helpers
-├── models/                 → Models & Request DTO
-├── repo/                   → Data access layer
-└── service/                → Business logic
+├── lib/                    → JWT & Response Helpers
+├── middleware/             → Authorization Middleware
+├── models/                 → Models
+├── repo/                   → Data Access Layer
+└── service/                → Business Logic
 
 migrations/
-└── 000001_create_users_table
+├── 000001_create_users_table
+├── 000002_alter_table_users
+└── 000003_create_refresh_tokens
 ```
 
 ---
@@ -41,27 +61,40 @@ erDiagram
 
 USERS {
     bigint id PK
+    string username
     string email UK
     string password
-    string username
     string phone
+    string picture
     timestamp created_at
     timestamp updated_at
 }
+
+REFRESH_TOKENS {
+    bigint id PK
+    bigint user_id FK
+    string token
+    timestamp expires_at
+    timestamp created_at
+}
+
+USERS ||--o{ REFRESH_TOKENS : owns
 ```
 
 ---
 
 # Tech Stack
 
-| Dependency | Purpose |
-|------------|---------|
-| Go | Programming Language |
-| Gin | HTTP Web Framework |
-| PostgreSQL | Database |
-| pgx/v5 | PostgreSQL Driver |
-| bcrypt | Password Hashing |
-| godotenv | Environment Loader |
+| Technology | Description          |
+| ---------- | -------------------- |
+| Go         | Programming Language |
+| Gin        | HTTP Web Framework   |
+| PostgreSQL | Database             |
+| pgx/v5     | PostgreSQL Driver    |
+| bcrypt     | Password Hashing     |
+| JWT        | Authentication       |
+| godotenv   | Environment Loader   |
+| Swaggo     | API Documentation    |
 
 ---
 
@@ -71,7 +104,7 @@ USERS {
 - PostgreSQL
 - golang-migrate
 
-Install migrate:
+Install migrate
 
 ```bash
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
@@ -87,13 +120,13 @@ Clone repository
 git clone <repository-url>
 ```
 
-Masuk ke project
+Go to project
 
 ```bash
 cd backend1
 ```
 
-Install dependency
+Install dependencies
 
 ```bash
 go mod tidy
@@ -101,15 +134,18 @@ go mod tidy
 
 ---
 
-# Environment
+# Environment Variables
 
-Buat file `.env`
+Create `.env`
 
 ```env
 DATABASE_URL=postgres://postgres:password@localhost:5432/backend1?sslmode=disable
-```
 
-Sesuaikan dengan database PostgreSQL milikmu.
+JWT_SECRET=your-secret-key
+
+ACCESS_TOKEN_EXPIRED=15m
+REFRESH_TOKEN_EXPIRED=168h
+```
 
 ---
 
@@ -131,13 +167,34 @@ migrate -path migrations \
 
 ---
 
-# Run Application
+# Make Commands
+
+| Command             | Description                    |
+| ------------------- | ------------------------------ |
+| `make run`          | Run application                |
+| `make swagger`      | Generate Swagger documentation |
+| `make migrate-up`   | Run database migration         |
+| `make migrate-down` | Rollback database migration    |
+
+> Sesuaikan dengan target yang tersedia di `Makefile` milikmu.
+
+---
+
+# Running Application
+
+Without Makefile
 
 ```bash
 go run cmd/main.go
 ```
 
-Server berjalan pada
+Using Makefile
+
+```bash
+make run
+```
+
+Server
 
 ```
 http://localhost:8080
@@ -145,58 +202,63 @@ http://localhost:8080
 
 ---
 
+# Swagger Documentation
+
+Open Swagger UI
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+---
+
 # API Endpoints
 
-## Register
+## Authentication
 
-**POST**
-
-```
-/register
-```
-
-Body
-
-```
-application/x-www-form-urlencoded
-```
-
-| Field | Example |
-|------|---------|
-| email | admin@mail.com |
-| password | admin123 |
-| username | admin |
-| phone | 082131213511 |
+| Method | Endpoint         | Description          |
+| ------ | ---------------- | -------------------- |
+| POST   | `/auth/register` | Register new user    |
+| POST   | `/auth/login`    | Login user           |
+| POST   | `/auth/refresh`  | Refresh access token |
 
 ---
 
-## Login
+## Users
 
-**POST**
-
-```
-/login
-```
-
-Body
-
-```
-application/x-www-form-urlencoded
-```
-
-| Field | Example |
-|------|---------|
-| email | admin@mail.com |
-| password | admin123 |
+| Method | Endpoint             | Description            |
+| ------ | -------------------- | ---------------------- |
+| GET    | `/users`             | Get all users          |
+| GET    | `/users/{id}`        | Get user by ID         |
+| POST   | `/users`             | Create new user        |
+| PUT    | `/users/{id}`        | Update user            |
+| DELETE | `/users/{id}`        | Delete user            |
+| POST   | `/users/{id}/upload` | Upload profile picture |
 
 ---
 
-## Get All Users
+# Authentication Flow
 
-**GET**
-
-```
-/users
+```text
+Register
+    │
+    ▼
+Login
+    │
+    ▼
+Access Token + Refresh Token
+    │
+    ▼
+Access Protected Endpoint
+    │
+    ▼
+Access Token Expired
+    │
+    ▼
+POST /auth/refresh
+    │
+    ▼
+New Access Token
 ```
 
 ---
@@ -206,46 +268,60 @@ application/x-www-form-urlencoded
 ```
 .
 ├── cmd
-│   └── main.go
+├── docs
+├── images
 ├── internal
 │   ├── di
+│   ├── dto
 │   ├── handlers
 │   ├── lib
+│   ├── middleware
 │   ├── models
 │   ├── repo
 │   └── service
 ├── migrations
-├── .env
+├── uploads
+├── Makefile
+├── README.md
 ├── go.mod
-├── go.sum
-└── README.md
+└── go.sum
 ```
+
+---
 
 # API Testing Results
 
-### Register
+## Register
 
-Berikut hasil pengujian endpoint **Register** menggunakan REST Client.
+Register endpoint tested using REST Client.
 
-![Register Success](docs/images/register-success.png)
-
----
-
-### Login
-
-Berikut hasil pengujian endpoint **Login** menggunakan REST Client.
-
-![Login Success](docs/images/login-success.png)
+![Register Success](images/register-success.png)
 
 ---
 
+## Login
+
+Login endpoint tested using REST Client.
+
+![Login Success](images/login-success.png)
+
 ---
 
-# Improvements
+# Security
 
-- JWT Authentication
+- Password hashed using bcrypt
+- JWT Access Token Authentication
+- Refresh Token Authentication
 - Authorization Middleware
-- Refresh Token
-- User Profile Endpoint
-- Docker Support
+- Protected API Endpoints
+
+---
+
+# Future Improvements
+
+- Docker & Docker Compose
 - Unit Testing
+- Role-Based Access Control (RBAC)
+- Email Verification
+- Forgot Password
+- Rate Limiting
