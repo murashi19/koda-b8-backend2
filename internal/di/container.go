@@ -16,15 +16,17 @@ import (
 type Container struct {
 	db *pgxpool.Pool
 
-	userRepo    *repo.UserRepo
-	userService *service.UserService
-	authHandler *handlers.AuthHandler
-	userHandler *handlers.UserHandler
+	userRepo         *repo.UserRepo
+	refreshTokenRepo *repo.RefreshTokenRepo
+	userService      *service.UserService
+	authHandler      *handlers.AuthHandler
+	userHandler      *handlers.UserHandler
 }
 
 func (c *Container) initDeps() {
 	c.userRepo = repo.NewUserRepo(c.db)
-	c.userService = service.NewUserService(c.userRepo)
+	c.refreshTokenRepo = repo.NewRefreshTokenRepo(c.db)
+	c.userService = service.NewUserService(c.userRepo, c.refreshTokenRepo)
 	c.authHandler = handlers.NewAuthHandler(c.userService)
 	c.userHandler = handlers.NewUserHandler(c.userService)
 }
