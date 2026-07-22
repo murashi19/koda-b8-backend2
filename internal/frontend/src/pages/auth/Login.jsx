@@ -27,12 +27,16 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await api.post("/auth/login", formData);
-      localStorage.setItem("token", response.data.token);
-      console.log(response.data);
+      const { data } = await api.post("/auth/login", formData);
+      const { access_token, refresh_token } = data.result;
+
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
+
       navigate("/users");
     } catch (err) {
       console.error(err);
+
       setError(err.response?.data?.message ?? "Email atau password salah.");
     } finally {
       setLoading(false);
