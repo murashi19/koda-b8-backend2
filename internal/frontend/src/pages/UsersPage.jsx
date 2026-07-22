@@ -5,6 +5,7 @@ import UserTable from "../components/UserTable";
 import AddUserModal from "../components/AddUser";
 import EditUserModal from "../components/EditUser";
 import DeleteConfirmModal from "../components/ConfirmDelete";
+import UploadPicture from "../components/UploadPicture";
 
 function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -15,13 +16,13 @@ function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const accessToken = localStorage.getItem("access_token");
 
-    // Jika belum login
-    if (!token) {
+    if (!accessToken) {
       navigate("/login", { replace: true });
       return;
     }
@@ -32,14 +33,6 @@ function UsersPage() {
         setUsers(response.data.result);
       } catch (err) {
         console.error("Error fetching users:", err);
-
-        // Jika token tidak valid atau dihapus
-        if (err.response?.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/login", { replace: true });
-          return;
-        }
-
         setError(err.response?.data?.message || "Gagal memuat data pengguna.");
       } finally {
         setLoading(false);
@@ -50,7 +43,8 @@ function UsersPage() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     navigate("/login", { replace: true });
   };
 
@@ -100,6 +94,10 @@ function UsersPage() {
                 setSelectedUser(user);
                 setShowDeleteModal(true);
               }}
+              onUpload={(user) => {
+                setSelectedUser(user);
+                setShowUploadModal(true);
+              }}
             />
           )}
         </div>
@@ -145,6 +143,22 @@ function UsersPage() {
         }}
         onSuccess={(id) => {
           setUsers((prev) => prev.filter((user) => user.id !== id));
+        }}
+      />
+
+      <UploadPicture
+        open={showUploadModal}
+        user={selectedUser}
+        onClose={() => {
+          setShowUploadModal(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={(updatedUser) => {
+          setUsers((prev) =>
+            prev.map((user) =>
+              user.id === updatedUser.id ? updatedUser : user,
+            ),
+          );
         }}
       />
 

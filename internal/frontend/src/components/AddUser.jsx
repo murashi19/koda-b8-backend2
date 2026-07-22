@@ -8,6 +8,7 @@ function AddUserModal({ open, onClose, onSuccess }) {
     email: "",
     phone: "",
     password: "",
+    picture: null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -16,11 +17,11 @@ function AddUserModal({ open, onClose, onSuccess }) {
   if (!open) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, files, type } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "file" ? files[0] : value,
     }));
   };
 
@@ -30,6 +31,7 @@ function AddUserModal({ open, onClose, onSuccess }) {
       email: "",
       phone: "",
       password: "",
+      picture: null,
     });
 
     setError("");
@@ -42,7 +44,18 @@ function AddUserModal({ open, onClose, onSuccess }) {
     setError("");
 
     try {
-      const response = await api.post("/auth/register", formData);
+      const data = new FormData();
+
+      data.append("username", formData.username);
+      data.append("email", formData.email);
+      data.append("phone", formData.phone);
+      data.append("password", formData.password);
+
+      if (formData.picture) {
+        data.append("picture", formData.picture);
+      }
+
+      const response = await api.post("/users", data);
 
       onSuccess(response.data.result);
 
@@ -65,7 +78,7 @@ function AddUserModal({ open, onClose, onSuccess }) {
       }}
     >
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 text-red-600 p-3 text-sm">
+        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -110,6 +123,29 @@ function AddUserModal({ open, onClose, onSuccess }) {
           className="w-full border rounded-lg px-3 py-2"
           required
         />
+
+        <div>
+          <label className="block mb-2 text-sm font-medium">Picture</label>
+
+          <input
+            type="file"
+            name="picture"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full border rounded-lg px-3 py-2"
+            required
+          />
+
+          {formData.picture && (
+            <div className="mt-3">
+              <img
+                src={URL.createObjectURL(formData.picture)}
+                alt="Preview"
+                className="w-24 h-24 object-cover rounded-lg border"
+              />
+            </div>
+          )}
+        </div>
 
         <div className="flex justify-end gap-3 pt-3">
           <button

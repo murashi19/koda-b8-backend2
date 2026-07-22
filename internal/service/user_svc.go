@@ -4,19 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/murashi19/koda-b8-backend1/internal/lib"
 	"github.com/murashi19/koda-b8-backend1/internal/models"
 	"github.com/murashi19/koda-b8-backend1/internal/repo"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	repo *repo.UserRepo
+	repo             *repo.UserRepo
+	refreshTokenRepo *repo.RefreshTokenRepo
 }
 
-func NewUserService(repo *repo.UserRepo) *UserService {
+func NewUserService(repo *repo.UserRepo, refreshTokenRepo *repo.RefreshTokenRepo) *UserService {
 	return &UserService{
-		repo: repo,
+		repo:             repo,
+		refreshTokenRepo: refreshTokenRepo,
 	}
 }
 
@@ -36,7 +40,7 @@ func (s *UserService) GetById(ctx context.Context, id int64) (*models.User, erro
 	return data, nil
 }
 
-func (s *UserService) CreateUser(ctx context.Context, data *models.CreateUserRequest) (*models.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, data *models.CreateUserRequest, picturePath string) (*models.User, error) {
 
 	// Validasi input
 	if data.Email == "" ||
@@ -64,12 +68,16 @@ func (s *UserService) CreateUser(ctx context.Context, data *models.CreateUserReq
 		return nil, err
 	}
 
+	// Simpan alamat gambar
+	picture := picturePath
+
 	// Buat entity User
 	user := &models.User{
 		Email:    data.Email,
 		Password: string(hashedPassword),
 		Username: data.Username,
 		Phone:    data.Phone,
+		Picture:  &picture,
 	}
 
 	// Simpan ke database
@@ -113,4 +121,51 @@ func (s *UserService) DeleteUser(ctx context.Context, id int64) error {
 		return errors.New("User not found")
 	}
 	return s.repo.DeleteUser(ctx, id)
+}
+
+func (s *UserService) Upload(ctx context.Context, id int64, data *models.UpdateUserRequest) (*models.User, error) {
+	user, _ := s.repo.GetById(ctx, id)
+
+	if user == nil {
+		return nil, errors.New("User not found")
+	}
+	return s.repo.Upload(ctx, id, *data.Picture)
+}
+
+func (s *UserService) RefreshToken(ctx context.Context, data *models.RefreshTokenRequest) (*models.RefreshTokenResponse, error) {
+
+	// 1. Verify JWT Refresh Token
+	valid, userID := lib.VerifyRefreshToken(data.RefreshToken)
+	if !valid {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// 2. Hash refresh token
+	tokenHash := lib.HashRefreshToken(data.RefreshToken)
+
+	// 3. Cari di database
+	refreshToken, err := s.refreshTokenRepo.GetByHash(ctx, tokenHash)
+	if err != nil {
+		return nil, errors.New("invalid refresh token")
+	}
+
+	// 4. Cek apakah sudah direvoke
+	if refreshToken.RevokedAt != nil {
+		return nil, errors.New("refresh token has been revoked")
+	}
+
+	// 5. Cek expired (double check)
+	if refreshToken.ExpiresAt.Before(time.Now()) {
+		return nil, errors.New("refresh token has expired")
+	}
+
+	// 6. Generate access token baru
+	accessToken, err := lib.GenerateAccessToken(*userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.RefreshTokenResponse{
+		AccessToken: accessToken,
+	}, nil
 }
