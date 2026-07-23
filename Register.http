@@ -15,10 +15,16 @@ Content-Type: application/json
     "password": "admin123"
 }
 
+### GET SEARCH USER
+GET /users?search[email]=mail HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3ODQ3OTgyMTcsImlhdCI6MTc4NDc5NzMxN30.m7u-qbxclOOxqWyr-_S175weERsmQqgqJCLKFO17aJM
+
+
 ### GET USER
 GET /users HTTP/1.1
 Host: localhost:8080
-Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOjEsImlhdCI6MTc4NDczMTczM30.t_sdnbYh9N97y6RVwFUULoAU6DWTwsHzzSlOqVudb9A
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3ODQ3OTk0ODgsImlhdCI6MTc4NDc5ODU4OH0.UOOaVu86ffkmb_reKeujT8o6Zy4MMW22unNyUWkyXOc
 
 ### GET BY ID
 GET /users/1 HTTP/1.1
@@ -56,3 +62,4 @@ Content-Type: application/json
 {
     "refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3ODQ5OTk3ODcsImlhdCI6MTc4NDc0MDU4N30.sCKBmpwnjz705ore24EGoh6Jo1VKxpteGlHRkNH2q-8"
 }
+

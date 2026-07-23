@@ -47,7 +47,7 @@ func main() {
 	user := container.UserHandler()
 
 	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	router.Static("/uploads","./uploads")
+	router.Static("/uploads", "./uploads")
 
 	router.POST("/auth/register", auth.Register)
 	router.POST("/auth/login", auth.Login)
