@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/murashi19/koda-b8-backend1/internal/lib"
@@ -24,10 +25,6 @@ func NewUserService(repo *repo.UserRepo, refreshTokenRepo *repo.RefreshTokenRepo
 	}
 }
 
-func (s *UserService) GetAllUsers(ctx context.Context) ([]*models.User, error) {
-	return s.repo.GetAllUsers(ctx)
-}
-
 func (s *UserService) GetById(ctx context.Context, id int64) (*models.User, error) {
 	if id <= 0 {
 		return nil, errors.New("Invalid user id")
@@ -38,6 +35,34 @@ func (s *UserService) GetById(ctx context.Context, id int64) (*models.User, erro
 	}
 	fmt.Println(data)
 	return data, nil
+}
+
+func (s *UserService) GetAllUsers(ctx context.Context, page, limit int64) ([]*models.User, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 5
+	}
+	return s.repo.GetAllUsers(ctx, page, limit)
+}
+
+func (s *UserService) Search(ctx context.Context, keyword string, page, limit int64) ([]*models.User, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 5
+	}
+
+	search := strings.TrimSpace(keyword)
+
+	if search == "" {
+		return s.repo.GetAllUsers(ctx, page, limit)
+	}
+
+	return s.repo.GetUser(ctx, keyword, page, limit)
 }
 
 func (s *UserService) CreateUser(ctx context.Context, data *models.CreateUserRequest, picturePath string) (*models.User, error) {

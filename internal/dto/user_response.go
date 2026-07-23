@@ -60,3 +60,9 @@ type UpdateUserRequest struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
+
+type UserQuery struct {
+	Page   int
+	Limit  int
+	Search map[string]string
+}

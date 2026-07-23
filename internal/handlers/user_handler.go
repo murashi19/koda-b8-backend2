@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,20 +39,66 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 //		@Failure		500	{object}	dto.ErrorResponse
 //		@Router			/users [get]
 func (h *UserHandler) GetUsers(ctx *gin.Context) {
-	users, err := h.service.GetAllUsers(ctx.Request.Context())
+	page, _ := strconv.ParseInt(ctx.DefaultQuery("page", "1"), 10, 64)
+	limit, _ := strconv.ParseInt(ctx.DefaultQuery("limit", "5"), 10, 64)
 
-	if err != nil {
-		ctx.JSON(http.StatusOK, dto.ErrorResponse{
-			Success: false,
-			Message: "Failed to retrieve users",
-		})
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 5
+	}
+	keyword := ctx.Query("search[username]")
+
+	if keyword == "" {
+		keyword = ctx.Query("search[email]")
+
 	}
 
-	ctx.JSON(http.StatusOK, lib.Response{
-		Success: true,
-		Message: "Get All Users Success",
-		Result:  users,
-	})
+	if keyword != "" {
+
+		user, total, err := h.service.Search(ctx.Request.Context(), keyword, page, limit)
+
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, dto.ErrorResponse{
+				Success: false,
+				Message: "Failed Search Data User",
+			})
+			return
+		}
+		ctx.JSON(http.StatusOK, lib.Response{
+			Success: true,
+			Message: "Search Users Success",
+			Result: gin.H{
+				"page":       page,
+				"limit":      limit,
+				"total":      total,
+				"total_page": int(math.Ceil(float64(total) / float64(limit))),
+				"data":       user,
+			},
+		})
+	} else {
+		users, total, err := h.service.GetAllUsers(ctx.Request.Context(), page, limit)
+
+		if err != nil {
+			ctx.JSON(http.StatusOK, dto.ErrorResponse{
+				Success: false,
+				Message: "Failed to retrieve users",
+			})
+		}
+
+		ctx.JSON(http.StatusOK, lib.Response{
+			Success: true,
+			Message: "Get All Users Success",
+			Result: gin.H{
+				"page":       page,
+				"limit":      limit,
+				"total":      total,
+				"total_page": int(math.Ceil(float64(total) / float64(limit))),
+				"data":       users,
+			},
+		})
+	}
 }
 
 // CreateUser godoc
